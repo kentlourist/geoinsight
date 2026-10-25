@@ -1,0 +1,11 @@
+{
+  "title": "Peta Geologi Lembar … (GeoMap, Badan Geologi)",
+  "publisher": "Pusat Survei Geologi, Badan Geologi",
+  "scale": "1:100.000",
+  "year": "isi tahun terbit lembar",
+  "license": "Hak cipta PSG – periksa Syarat dan Ketentuan GeoMap sebelum dipublikasikan",
+  "citation": "isi sitasi lembar peta",
+  "crs": "EPSG:4326",
+  "simplify_deg": 0.0002,
+  "fields": {"name": "NAMA_KOLOM_FORMASI", "lith": "NAMA_KOLOM_LITOLOGI", "age": "NAMA_KOLOM_UMUR"}
+}
