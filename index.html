@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GeoInsight – Platform Data Geologi</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand">GeoInsight<small>Platform data geologi</small></div>
+  <form id="search"><input id="q" placeholder="Cari lokasi atau koordinat (contoh: Palembang, atau -2.97, 104.75)" autocomplete="off"><button>Cari</button></form>
+  <label class="file">Unggah SHP/GeoJSON<input id="file" type="file" accept=".zip,.geojson,.json" hidden></label>
+</header>
+<main>
+  <div id="map"></div>
+  <aside id="panel">
+    <h2>Ringkasan geologi</h2>
+    <p id="status" class="muted">Klik peta, cari lokasi, atau unggah batas wilayah untuk melihat satuan geologi.</p>
+    <div id="result"></div>
+    <h3>Layer</h3>
+    <label><input type="radio" name="base" value="sat" checked> Citra satelit</label>
+    <label><input type="radio" name="base" value="osm"> Peta jalan (OSM)</label>
+    <label><input type="checkbox" id="geo" checked> Peta geologi global (Macrostrat)</label>
+    <label>Transparansi geologi <input type="range" id="op" min="0.2" max="1" step="0.1" value="0.6"></label>
+    <label>Detail data geologi (zoom maks): <b id="capv">5</b> <input type="range" id="cap" min="5" max="12" step="1" value="5"></label>
+    <div id="local"></div>
+    <input id="flt" placeholder="Filter litologi/umur/formasi (layer lokal)" style="width:100%;margin-top:6px;padding:6px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:6px">
+    <h3>Hasil analisis SHP</h3>
+    <select id="res"><option value="">Pilih hasil…</option></select>
+    <div id="resOut" class="muted">Belum ada hasil. Taruh file di folder input/ repo.</div>
+  </aside>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/shpjs@4.0.4/dist/shp.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
