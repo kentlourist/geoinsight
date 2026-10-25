@@ -9,7 +9,7 @@ const MIN_NATIVE = 5;
 let cap = +(sessionStorage.getItem('geoCap2') || 5);
 const geo = L.tileLayer('https://tiles.macrostrat.org/carto/{z}/{x}/{y}.png', {maxZoom: 18, maxNativeZoom: cap, opacity: .6, attribution: 'Geologi &copy; Macrostrat'});
 base.sat.addTo(map); geo.addTo(map);
-let marker, aoi;
+let marker, aoi, lastPlace = '', currentS = null;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '-').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 
@@ -17,6 +17,8 @@ document.querySelectorAll('[name=base]').forEach(r => r.onchange = () => {
   Object.values(base).forEach(l => map.removeLayer(l)); base[r.value].addTo(map).bringToBack();
 });
 $('geo').onchange = e => e.target.checked ? geo.addTo(map) : map.removeLayer(geo);
+if (!$('cap')) { const l = document.createElement('label'); l.innerHTML = 'Detail data geologi (zoom maks): <b id="capv">5</b> <input type="range" id="cap" min="5" max="12" step="1" value="5">'; $('op').parentElement.after(l); }
+{ const v = document.createElement('p'); v.className = 'muted'; v.textContent = 'Versi aplikasi: 3.1'; $('panel').appendChild(v); }
 $('cap').value = cap; $('capv').textContent = cap;
 $('cap').oninput = e => { cap = geo.options.maxNativeZoom = +e.target.value; $('capv').textContent = cap; try { sessionStorage.setItem('geoCap2', cap); } catch {} geo.redraw(); };
 $('op').oninput = e => geo.setOpacity(+e.target.value);
@@ -70,6 +72,7 @@ async function queryGeology(lat, lng) {
     let units; try { units = JSON.parse(sessionStorage.getItem(ck)); } catch {}
     if (!units) { units = await macroPoint(lat, lng); try { sessionStorage.setItem(ck, JSON.stringify(units)); } catch {} }
     if (!units.length) { $('status').textContent = 'Tidak ada satuan geologi pada titik ini (mungkin laut atau di luar cakupan data).'; return; }
+    document.dispatchEvent(new CustomEvent('geo:units', {detail: {lat, lng, units, place: lastPlace}}));
     $('status').textContent = `${units.length} satuan ditemukan di ${lat.toFixed(4)}, ${lng.toFixed(4)}.`;
     $('result').innerHTML += '<h3>Macrostrat (skala regional)</h3>' + units.map(u => `
       <div class="unit" style="--c:${esc(u.color || '#888')}">
@@ -84,19 +87,20 @@ async function queryGeology(lat, lng) {
     $('status').textContent = 'Gagal mengambil data geologi (' + err.message + '). Periksa koneksi lalu coba lagi.';
   }
 }
-map.on('click', e => queryGeology(e.latlng.lat, e.latlng.lng));
+map.on('click', e => { lastPlace = ''; queryGeology(e.latlng.lat, e.latlng.lng); });
 
 $('search').onsubmit = async e => {
   e.preventDefault();
   const q = $('q').value.trim(); if (!q) return;
   const m = q.match(/^(-?\d+(\.\d+)?)\s*[, ]\s*(-?\d+(\.\d+)?)$/);
-  if (m) { map.setView([+m[1], +m[3]], 12); return queryGeology(+m[1], +m[3]); }
+  if (m) { lastPlace = ''; map.setView([+m[1], +m[3]], 12); return queryGeology(+m[1], +m[3]); }
   $('status').textContent = 'Mencari lokasi…';
   try {
     const r = await (await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(q))).json();
     if (!r.length) { $('status').textContent = `Lokasi "${q}" tidak ditemukan. Coba nama lain atau koordinat.`; return; }
     const bb = r[0].boundingbox.map(Number);
     map.fitBounds([[bb[0], bb[2]], [bb[1], bb[3]]]);
+    lastPlace = r[0].display_name.split(',').slice(0, 3).join(',');
     queryGeology(+r[0].lat, +r[0].lon);
   } catch { $('status').textContent = 'Pencarian gagal. Periksa koneksi lalu coba lagi.'; }
 };
@@ -109,6 +113,7 @@ $('file').onchange = async e => {
     aoi = L.geoJSON(gj, {style: {color: '#3dd6c6', weight: 2, fillOpacity: .05}}).addTo(map);
     map.fitBounds(aoi.getBounds());
     const c = aoi.getBounds().getCenter();
+    lastPlace = f.name;
     queryGeology(c.lat, c.lng);
     $('status').textContent += ' (pratinjau titik pusat. Untuk statistik luas, taruh file di folder input/ repo)';
   } catch { $('status').textContent = 'File tidak terbaca. Unggah .zip berisi .shp/.dbf/.shx/.prj atau file .geojson (disarankan CRS WGS84).'; }
@@ -168,6 +173,7 @@ fetch('results/index.json').then(r => r.ok ? r.json() : []).then(list => {
     if (!e) return;
     if (e.error) { $('resOut').textContent = 'Analisis gagal: ' + e.error; return; }
     const s = await (await fetch(`results/${e.dir}/summary.json`)).json();
+    currentS = s; document.dispatchEvent(new CustomEvent('geo:analysis', {detail: s}));
     const base = `results/${e.dir}/`, local = s.local || [];
     const draw = async file => {
       if (resLayer) map.removeLayer(resLayer);

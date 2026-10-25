@@ -4,36 +4,57 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GeoInsight – Platform Data Geologi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<header>
-  <div class="brand">GeoInsight<small>Platform data geologi</small></div>
-  <form id="search"><input id="q" placeholder="Cari lokasi atau koordinat (contoh: Palembang, atau -2.97, 104.75)" autocomplete="off"><button>Cari</button></form>
-  <label class="file">Unggah SHP/GeoJSON<input id="file" type="file" accept=".zip,.geojson,.json" hidden></label>
+<header class="top">
+  <div class="brand"><svg viewBox="0 0 32 24" width="34" height="26"><path d="M1 22L10 4l6 11 4-6 11 13z" fill="none" stroke="#3b9eff" stroke-width="2.4" stroke-linejoin="round"/></svg><div>GeoInsight<small>Platform data geologi global</small></div></div>
+  <form id="search"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="q" placeholder="Cari lokasi atau koordinat (contoh: Palembang, atau -2.97, 104.75)" autocomplete="off"><button>Cari</button></form>
+  <label class="btn">Unggah SHP/GeoJSON<input id="file" type="file" accept=".zip,.geojson,.json" hidden></label>
 </header>
-<main>
-  <div id="map"></div>
-  <aside id="panel">
+<nav class="side" aria-label="Menu utama">
+  <button data-go="peta" class="on"><svg class="ic" viewBox="0 0 24 24"><path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/></svg>Peta &amp; stratigrafi</button>
+  <button data-go="layer"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>Lapisan &amp; sumber</button>
+  <button data-go="analisis"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Hasil analisis</button>
+  <button data-go="laporan"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/></svg>Laporan</button>
+  <button data-go="unggah"><svg class="ic" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>Unggah data</button>
+  <p class="sidenote">Data geologi: Macrostrat (CC BY 4.0). Skala regional, bukan pengganti peta detail.</p>
+</nav>
+<section class="mapwrap"><div id="map"></div><div id="legend" class="legend" hidden></div></section>
+<aside id="panel">
+  <div class="tabs"><button data-tab="strat" class="on">Stratigrafi</button><button data-tab="layer">Lapisan</button><button data-tab="ana">Analisis</button></div>
+  <div class="tab on" id="t-strat">
     <h2>Ringkasan geologi</h2>
     <p id="status" class="muted">Klik peta, cari lokasi, atau unggah batas wilayah untuk melihat satuan geologi.</p>
-    <div id="result"></div>
-    <h3>Layer</h3>
+    <div id="result"></div><div id="summary"></div>
+  </div>
+  <div class="tab" id="t-layer">
+    <h3>Peta dasar</h3>
     <label><input type="radio" name="base" value="sat" checked> Citra satelit</label>
     <label><input type="radio" name="base" value="osm"> Peta jalan (OSM)</label>
+    <h3>Geologi</h3>
     <label><input type="checkbox" id="geo" checked> Peta geologi global (Macrostrat)</label>
-    <label>Transparansi geologi <input type="range" id="op" min="0.2" max="1" step="0.1" value="0.6"></label>
-    <label>Detail data geologi (zoom maks): <b id="capv">5</b> <input type="range" id="cap" min="5" max="12" step="1" value="5"></label>
+    <label>Transparansi <input type="range" id="op" min="0.2" max="1" step="0.1" value="0.6"></label>
     <div id="local"></div>
-    <input id="flt" placeholder="Filter litologi/umur/formasi (layer lokal)" style="width:100%;margin-top:6px;padding:6px;border:1px solid var(--line);background:var(--bg);color:var(--text);border-radius:6px">
+    <input id="flt" placeholder="Filter litologi/umur/formasi (layer lokal)">
+  </div>
+  <div class="tab" id="t-ana">
     <h3>Hasil analisis SHP</h3>
     <select id="res"><option value="">Pilih hasil…</option></select>
     <div id="resOut" class="muted">Belum ada hasil. Taruh file di folder input/ repo.</div>
-  </aside>
-</main>
+  </div>
+</aside>
+<section class="info">
+  <div class="card" id="c-loc"><h3>Informasi lokasi</h3><p class="muted">Klik peta untuk melihat informasi lokasi.</p></div>
+  <div class="card" id="c-lith"><h3>Distribusi litologi</h3><p class="muted">Pilih hasil di tab Analisis untuk melihat proporsi litologi area kajian.</p></div>
+  <div class="card" id="c-src"><h3>Sumber &amp; atribusi</h3><p class="muted">Data geologi: Macrostrat dan penyedia data asli (CC BY 4.0). Citra: Esri, Maxar, Earthstar Geographics. Pencarian: OpenStreetMap Nominatim.</p></div>
+</section>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/shpjs@4.0.4/dist/shp.min.js"></script>
 <script src="app.js"></script>
+<script src="ui.js"></script>
 </body>
 </html>
